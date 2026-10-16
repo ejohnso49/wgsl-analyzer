@@ -36,7 +36,7 @@ struct FileResult {
 
 #[derive(Debug)]
 enum FileStatus {
-    Unchanged,
+    Unchanged(String),
     FormatterErrors(FormatDocumentError),
     ParserErrors { errors: Vec<Diagnostic> },
     Changed { source: String, formatted: String },
@@ -119,7 +119,7 @@ fn format_file(
                 FileResult {
                     file,
                     duration: Instant::now().duration_since(start),
-                    status: FileStatus::Unchanged,
+                    status: FileStatus::Unchanged(source),
                 }
             } else {
                 FileResult {
@@ -168,7 +168,7 @@ fn check_file_results<S>(
     summary.start_files();
     for result in results {
         match &result.status {
-            FileStatus::Unchanged => {
+            FileStatus::Unchanged(_) => {
                 passed_paths.push(result.file.clone());
             },
             FileStatus::FormatterErrors(_) | FileStatus::ParserErrors { errors: _ } => {
@@ -205,8 +205,14 @@ fn write_file_results<S>(
     summary.start_files();
     for result in results {
         match &result.status {
-            FileStatus::Unchanged => {
+            FileStatus::Unchanged(source) => {
                 unchanged_count.push(result.file.clone());
+                // Only write out to unchanged files when stdin is the source
+                // to prevent unnecessary writes
+                if matches!(result.file, FormattingSource::Stdin) {
+                    let mut writer = result.file.write().unwrap();
+                    writer.write_all(source.as_bytes()).unwrap();
+                }
             },
             FileStatus::FormatterErrors(_) | FileStatus::ParserErrors { errors: _ } => {
                 errored_count.push(result.file.clone());
@@ -223,6 +229,10 @@ fn write_file_results<S>(
 
     summary.write_summary(&formatted_count, &unchanged_count, &errored_count);
     summary.end();
+
+    if !errored_count.is_empty() {
+        exit(1);
+    }
 }
 
 #[derive(Debug, Clone)]

@@ -115,7 +115,7 @@ impl Summary for TextSummary {
     ) {
         print!("[{}]: ", file_result.file);
         match &file_result.status {
-            crate::FileStatus::Unchanged => println!("Unchanged"),
+            crate::FileStatus::Unchanged(_) => println!("Unchanged"),
             crate::FileStatus::ParserErrors { errors } => {
                 println!("Could not parse:");
                 for error in errors {
@@ -143,7 +143,7 @@ impl Summary for TextSummary {
     ) {
         print!("[{}]: ", file_result.file);
         match &file_result.status {
-            crate::FileStatus::Unchanged => println!("Pass"),
+            crate::FileStatus::Unchanged(_) => println!("Pass"),
             crate::FileStatus::ParserErrors { errors } => {
                 println!("Could not parse:");
                 for error in errors {
@@ -291,7 +291,7 @@ impl Summary for JsonSummary {
         self.begin_field("file");
         self.string_literal(&file_result.file.to_string());
         match &file_result.status {
-            crate::FileStatus::Unchanged => {
+            crate::FileStatus::Unchanged(_) => {
                 self.begin_field("status");
                 self.string_literal("unchanged");
             },
@@ -328,7 +328,7 @@ impl Summary for JsonSummary {
         self.begin_field("file");
         self.string_literal(&file_result.file.to_string());
         match &file_result.status {
-            crate::FileStatus::Unchanged => {
+            crate::FileStatus::Unchanged(_) => {
                 self.begin_field("status");
                 self.string_literal("pass");
             },
